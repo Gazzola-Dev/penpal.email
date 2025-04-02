@@ -88,7 +88,6 @@ export default function Toolbar() {
   };
 
   // Update toolbar based on text selection format
-
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
@@ -102,14 +101,19 @@ export default function Toolbar() {
         "font-family",
         "Arial"
       );
-      const fontSize = $getSelectionStyleValueForProperty(
+
+      // Get font size and extract just the number
+      const fontSizeWithUnit = $getSelectionStyleValueForProperty(
         selection,
         "font-size",
         "16px"
       );
 
+      // Extract the numeric part from the font size (removing 'px' or other units)
+      const fontSizeNumber = fontSizeWithUnit.replace(/[^0-9.]/g, "");
+
       setFontFamily(fontFamily);
-      setFontSize(fontSize);
+      setFontSize(fontSizeNumber);
     }
   }, []);
 
