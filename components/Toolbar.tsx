@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { useMediaContext } from "@/providers/MediaProvider";
 import {
   AlignCenter,
@@ -44,9 +45,7 @@ export default function Toolbar() {
   });
 
   // Get media playback time from context
-  const { currentTime, duration } = useMediaContext();
-
-  // Animation state for toolbar
+  const { currentTime, duration, isPlaying } = useMediaContext();
 
   // Format time as MM:SS
   const formatTime = (timeInSeconds: number): string => {
@@ -166,24 +165,9 @@ export default function Toolbar() {
 
       <Divider />
 
-      {/* Media timestamp display */}
-
-      <>
-        <div className="flex items-center mr-4 text-sm">
-          <Clock
-            size={16}
-            className="mr-1"
-          />
-          <span className="text-gray-700">
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </span>
-        </div>
-        <Divider />
-      </>
-
       {/* Animation section */}
       <div
-        className={`flex items-center space-x-2 transition-transform duration-300`}
+        className={`flex items-center space-x-2 transition-transform duration-300 w-full`}
       >
         <div className="flex items-center">
           <label
@@ -272,6 +256,24 @@ export default function Toolbar() {
             className="p-1 border rounded text-sm w-16"
           />
         </div>
+        <>
+          <Divider />
+
+          <div className="flex items-center mr-4 text-sm w-full justify-end">
+            <Clock
+              size={16}
+              className={cn("mr-1", isPlaying && "text-blue-500")}
+            />
+            <span className={cn("text-gray-700", isPlaying && "")}>
+              <span
+                className={cn("text-gray-700", isPlaying && "text-blue-500")}
+              >
+                {formatTime(currentTime)}{" "}
+              </span>{" "}
+              / {formatTime(duration)}
+            </span>
+          </div>
+        </>
       </div>
     </div>
   );

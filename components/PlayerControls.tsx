@@ -26,29 +26,19 @@ export default function PlayerControls() {
   // Set up media event listeners
   const setupMediaListeners = useCallback(
     (mediaElement: MediaElementType) => {
-      console.log("[setupMediaListeners] Setting up event listeners");
-
       // Metadata loaded event
       mediaElement.addEventListener("loadedmetadata", () => {
-        console.log(
-          "[Event:loadedmetadata] Media metadata loaded, duration:",
-          mediaElement.duration
-        );
         setLocalDuration(mediaElement.duration);
         setDuration(mediaElement.duration); // Update context
         setProgress(0);
         setLocalCurrentTime(0);
-        console.log("[Event:timeupdate] cleared");
         setCurrentTime(0); // Update context
       });
 
       // Time update event
       mediaElement.addEventListener("timeupdate", () => {
         setLocalCurrentTime(mediaElement.currentTime);
-        console.log(
-          "[Event:timeupdate] Current time updated:",
-          mediaElement.currentTime
-        );
+
         setCurrentTime(mediaElement.currentTime); // Update context
         if (mediaElement.duration > 0) {
           const newProgress =
@@ -59,26 +49,22 @@ export default function PlayerControls() {
 
       // Play event
       mediaElement.addEventListener("play", () => {
-        console.log("[Event:play] Media playback started");
         setLocalIsPlaying(true);
         setIsPlaying(true); // Update context
       });
 
       // Pause event
       mediaElement.addEventListener("pause", () => {
-        console.log("[Event:pause] Media playback paused");
         setLocalIsPlaying(false);
         setIsPlaying(false); // Update context
       });
 
       // Ended event
       mediaElement.addEventListener("ended", () => {
-        console.log("[Event:ended] Media playback ended");
         setLocalIsPlaying(false);
         setIsPlaying(false); // Update context
         setProgress(0);
         setLocalCurrentTime(0);
-        console.log("[Event:timeupdate] cleared");
         setCurrentTime(0); // Update context
       });
 
@@ -99,18 +85,12 @@ export default function PlayerControls() {
       setIsDragging(false);
 
       const files = e.dataTransfer.files;
-      console.log(
-        "[handleDrop] Files dropped:",
-        files.length > 0 ? files[0].name : "none"
-      );
 
       if (files.length > 0) {
         const file = files[0];
 
         // Check if file is audio or video
         if (file.type.startsWith("audio/") || file.type.startsWith("video/")) {
-          console.log("[handleDrop] Valid media file detected:", file.type);
-
           // Store the file reference
           setLocalMediaFile(file);
           setMediaFile(file); // Update context
@@ -118,7 +98,6 @@ export default function PlayerControls() {
 
           // Cleanup previous media
           if (mediaRef.current) {
-            console.log("[handleDrop] Cleaning up previous media element");
             mediaRef.current.pause();
             if (mediaRef.current.src) {
               URL.revokeObjectURL(mediaRef.current.src);
@@ -134,20 +113,13 @@ export default function PlayerControls() {
           // Create URL for the file
           const fileURL = URL.createObjectURL(file);
           mediaElement.src = fileURL;
-          console.log(
-            "[handleDrop] Created media element:",
-            isAudio ? "audio" : "video"
-          );
 
           // Set media reference
           mediaRef.current = mediaElement;
 
           // Set up event listeners
           setupMediaListeners(mediaElement);
-
-          console.log("[handleDrop] Media setup complete for:", file.name);
         } else {
-          console.log("[handleDrop] Unsupported file type:", file.type);
           alert("Unsupported file type. Please drop an audio or video file.");
         }
       }
@@ -170,48 +142,29 @@ export default function PlayerControls() {
 
   // Handle play/pause
   const togglePlay = useCallback(() => {
-    console.log("[togglePlay] Toggle play called, current state:", isPlaying);
-
     if (mediaRef.current) {
       if (isPlaying) {
-        console.log("[togglePlay] Attempting to pause media");
         mediaRef.current.pause();
       } else {
-        console.log("[togglePlay] Attempting to play media");
-        console.log(
-          "[togglePlay] Media element ready state:",
-          mediaRef.current.readyState
-        );
-
         mediaRef.current
           .play()
-          .then(() => {
-            console.log("[togglePlay] Playback started successfully");
-          })
+          .then(() => {})
           .catch((err) => {
             console.error("[togglePlay] Playback failed:", err);
           });
       }
     } else {
-      console.log("[togglePlay] No media element available for playback");
     }
   }, [isPlaying]);
 
   // Handle seeking on progress bar click
   const handleProgressClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      console.log("[handleProgressClick] Progress bar clicked");
-
       if (mediaRef.current && localDuration > 0) {
         const rect = e.currentTarget.getBoundingClientRect();
         const clickPositionRatio = (e.clientX - rect.left) / rect.width;
         const newTime = clickPositionRatio * localDuration;
 
-        console.log(
-          "[handleProgressClick] Seeking to position:",
-          newTime,
-          "seconds"
-        );
         mediaRef.current.currentTime = newTime;
       }
     },
@@ -258,7 +211,6 @@ export default function PlayerControls() {
         mediaRef.current.pause();
         if (mediaRef.current.src) {
           URL.revokeObjectURL(mediaRef.current.src);
-          console.log("[cleanup] Object URL revoked");
         }
       }
     };
@@ -341,6 +293,13 @@ export default function PlayerControls() {
             <span>{formatTime(localDuration)}</span>
           </div>
         )}
+        <div className="w-full flex justify-start">
+          {fileDisplayName && (
+            <span className="text-sm font-bold text-gray-600 text-center mt-1 px-1 max-w-full truncate">
+              {fileDisplayName}
+            </span>
+          )}
+        </div>
       </div>
       <button
         onClick={togglePlay}

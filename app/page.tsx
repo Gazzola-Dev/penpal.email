@@ -5,9 +5,9 @@ import PlayerControls from "@/components/PlayerControls";
 
 export default function Home() {
   return (
-    <>
+    <main className="flex flex-col h-screen">
       <Editor />
       <PlayerControls />
-    </>
+    </main>
   );
 }
