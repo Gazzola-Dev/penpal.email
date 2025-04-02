@@ -21,6 +21,7 @@ import {
 
 import Toolbar from "@/components/Toolbar";
 import ExampleTheme from "@/components/ui/ExampleTheme";
+import FontFormattingPlugin from "@/lib/editorCommands";
 import { parseAllowedColor, parseAllowedFontSize } from "@/lib/styleConfig";
 
 const placeholder = "Enter some rich text...";
@@ -63,6 +64,8 @@ const getExtraStyles = (element: HTMLElement): string => {
   const fontSize = parseAllowedFontSize(element.style.fontSize);
   const backgroundColor = parseAllowedColor(element.style.backgroundColor);
   const color = parseAllowedColor(element.style.color);
+  const fontFamily = element.style.fontFamily;
+
   if (fontSize !== "" && fontSize !== "15px") {
     extraStyles += `font-size: ${fontSize};`;
   }
@@ -71,6 +74,9 @@ const getExtraStyles = (element: HTMLElement): string => {
   }
   if (color !== "" && color !== "rgb(0, 0, 0)") {
     extraStyles += `color: ${color};`;
+  }
+  if (fontFamily && fontFamily !== "") {
+    extraStyles += `font-family: ${fontFamily};`;
   }
   return extraStyles;
 };
@@ -156,6 +162,7 @@ export default function Editor() {
           />
           <HistoryPlugin />
           <AutoFocusPlugin />
+          <FontFormattingPlugin />
         </div>
       </div>
     </LexicalComposer>

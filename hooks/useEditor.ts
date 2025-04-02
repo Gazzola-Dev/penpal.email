@@ -1,6 +1,11 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { $getSelection, $isRangeSelection } from "lexical";
-import { useEffect, useState } from "react";
+import {
+  $getSelection,
+  $isRangeSelection,
+  FORMAT_TEXT_COMMAND,
+  TextFormatType,
+} from "lexical";
+import { useCallback, useEffect, useState } from "react";
 
 // Animation options
 export const animationTypes = ["entrance", "emphasis", "exit"];
@@ -21,6 +26,9 @@ export default function useEditor() {
   const [editor] = useLexicalComposerContext();
   const [hasSelection, setHasSelection] = useState(false);
   const [selectedText, setSelectedText] = useState("");
+  const [isBold, setIsBold] = useState(false);
+  const [isItalic, setIsItalic] = useState(false);
+  const [isUnderline, setIsUnderline] = useState(false);
   const [currentAnimation, setCurrentAnimation] = useState<AnimationSettings>({
     type: "entrance",
     animation: "fadeIn",
@@ -28,18 +36,40 @@ export default function useEditor() {
     duration: 1,
   });
 
+  const updateFormatState = useCallback(() => {
+    editor.getEditorState().read(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        // Update selection state
+        const text = selection.getTextContent();
+        setHasSelection(text.length > 0);
+        setSelectedText(text);
+
+        // Update format states
+        setIsBold(selection.hasFormat("bold"));
+        setIsItalic(selection.hasFormat("italic"));
+        setIsUnderline(selection.hasFormat("underline"));
+      } else {
+        setHasSelection(false);
+        setSelectedText("");
+      }
+    });
+  }, [editor]);
+
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
       editorState.read(() => {
-        const selection = $getSelection();
-        const isRangeSelection = $isRangeSelection(selection);
-        const text = isRangeSelection ? selection.getTextContent() : "";
-
-        setHasSelection(isRangeSelection && text.length > 0);
-        setSelectedText(text);
+        updateFormatState();
       });
     });
-  }, [editor]);
+  }, [editor, updateFormatState]);
+
+  const applyFormat = useCallback(
+    (format: string) => {
+      editor.dispatchCommand(FORMAT_TEXT_COMMAND, format as TextFormatType);
+    },
+    [editor]
+  );
 
   const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setCurrentAnimation({
@@ -71,10 +101,25 @@ export default function useEditor() {
     });
   };
 
+  // Apply animation to selected text
+  const applyAnimation = useCallback(() => {
+    if (hasSelection) {
+      // Here you would implement the logic to apply animations
+      // This would require custom nodes or HTML serialization
+      console.log("Applying animation:", currentAnimation);
+    }
+  }, [hasSelection, currentAnimation]);
+
   return {
+    editor,
     hasSelection,
     selectedText,
+    isBold,
+    isItalic,
+    isUnderline,
     currentAnimation,
+    applyFormat,
+    applyAnimation,
     handleTypeChange,
     handleAnimationChange,
     handleDelayChange,
