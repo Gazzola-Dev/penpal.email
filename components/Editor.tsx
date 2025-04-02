@@ -1,10 +1,4 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
+"use client";
 
 import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
@@ -132,7 +126,7 @@ const editorConfig = {
     export: exportMap,
     import: constructImportMap(),
   },
-  namespace: "React.js Demo",
+  namespace: "Rich Text Editor",
   nodes: [ParagraphNode, TextNode],
   onError(error: Error) {
     throw error;
@@ -140,19 +134,21 @@ const editorConfig = {
   theme: ExampleTheme,
 };
 
-export default function App() {
+export default function Editor() {
   return (
     <LexicalComposer initialConfig={editorConfig}>
-      <div className="editor-container">
+      <div className="flex flex-col h-full">
         <Toolbar />
-        <div className="editor-inner">
+        <div className="flex-1 overflow-auto relative">
           <RichTextPlugin
             contentEditable={
               <ContentEditable
-                className="editor-input"
+                className="px-2 h-[calc(100%-0.2rem)] overflow-auto"
                 aria-placeholder={placeholder}
                 placeholder={
-                  <div className="editor-placeholder">{placeholder}</div>
+                  <div className="absolute top-2 left-2 -z-10">
+                    {placeholder}
+                  </div>
                 }
               />
             }
