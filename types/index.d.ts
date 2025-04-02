@@ -1,21 +1,22 @@
 import { EditorState } from "lexical";
 
+// Animation related types
 export interface AnimationSettings {
   type: string;
   animation: string;
   delay: number;
   duration: number;
-  timestamp?: number;
 }
 
+// Editor hook state returned from useEditor
 export interface EditorHookState {
-  editorState: EditorState | null;
-  setEditorState: (state: EditorState) => void;
   hasSelection: boolean;
-  setHasSelection: (hasSelection: boolean) => void;
-  animationSettings: AnimationSettings;
-  setAnimationSettings: (settings: AnimationSettings) => void;
-  applyAnimationToSelection: () => void;
+  selectedText: string;
+  currentAnimation: AnimationSettings;
+  handleTypeChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  handleAnimationChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  handleDelayChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleDurationChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 // Editor state and management
