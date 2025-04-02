@@ -1,17 +1,19 @@
 "use client";
 
+import { useMediaContext } from "@/providers/MediaProvider";
 import {
   AlignCenter,
   AlignJustify,
   AlignLeft,
   AlignRight,
   Bold,
+  Clock,
   Italic,
   List,
   ListOrdered,
   Underline,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 // Animation options
 export const animationTypes = ["entrance", "emphasis", "exit"];
@@ -34,7 +36,6 @@ interface AnimationSettings {
 
 export default function Toolbar() {
   const toolbarRef = useRef<HTMLDivElement>(null);
-  const [hasSelection, setHasSelection] = useState(false);
   const [currentAnimation, setCurrentAnimation] = useState<AnimationSettings>({
     type: "entrance",
     animation: "fadeIn",
@@ -42,23 +43,21 @@ export default function Toolbar() {
     duration: 1,
   });
 
+  // Get media playback time from context
+  const { currentTime, duration } = useMediaContext();
+
   // Animation state for toolbar
-  const [animating, setAnimating] = useState(false);
 
-  // Simulate toolbar animation state change on selection
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setHasSelection(true);
-      setAnimating(true);
+  // Format time as MM:SS
+  const formatTime = (timeInSeconds: number): string => {
+    if (isNaN(timeInSeconds)) return "00:00";
 
-      // Reset animation state after animation completes
-      setTimeout(() => {
-        setAnimating(false);
-      }, 300);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60);
+    return `${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
+  };
 
   // Handlers
   const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -68,8 +67,6 @@ export default function Toolbar() {
       animation:
         animationOptions[e.target.value as keyof typeof animationOptions][0],
     });
-    setAnimating(true);
-    setTimeout(() => setAnimating(false), 300);
   };
 
   const handleAnimationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -77,8 +74,6 @@ export default function Toolbar() {
       ...currentAnimation,
       animation: e.target.value,
     });
-    setAnimating(true);
-    setTimeout(() => setAnimating(false), 300);
   };
 
   const handleDelayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,9 +92,7 @@ export default function Toolbar() {
 
   return (
     <div
-      className={`p-2 border-b flex items-center ${
-        animating ? "bg-blue-50" : "bg-white"
-      } transition-colors duration-300`}
+      className={`p-2 border-b flex items-center transition-colors duration-300`}
       ref={toolbarRef}
     >
       {/* Text formatting options */}
@@ -173,11 +166,24 @@ export default function Toolbar() {
 
       <Divider />
 
+      {/* Media timestamp display */}
+
+      <>
+        <div className="flex items-center mr-4 text-sm">
+          <Clock
+            size={16}
+            className="mr-1"
+          />
+          <span className="text-gray-700">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
+        </div>
+        <Divider />
+      </>
+
       {/* Animation section */}
       <div
-        className={`flex items-center space-x-2 ${
-          animating ? "scale-105" : "scale-100"
-        } transition-transform duration-300`}
+        className={`flex items-center space-x-2 transition-transform duration-300`}
       >
         <div className="flex items-center">
           <label
@@ -190,7 +196,6 @@ export default function Toolbar() {
             id="animation-type"
             value={currentAnimation.type}
             onChange={handleTypeChange}
-            disabled={!hasSelection}
             className="p-1 border rounded text-sm"
           >
             {animationTypes.map((type) => (
@@ -215,7 +220,6 @@ export default function Toolbar() {
             id="animation-name"
             value={currentAnimation.animation}
             onChange={handleAnimationChange}
-            disabled={!hasSelection}
             className="p-1 border rounded text-sm"
           >
             {animationOptions[
@@ -245,7 +249,6 @@ export default function Toolbar() {
             step={0.1}
             value={isNaN(currentAnimation.delay) ? 0 : currentAnimation.delay}
             onChange={handleDelayChange}
-            disabled={!hasSelection}
             className="p-1 border rounded text-sm w-16"
           />
         </div>
@@ -266,7 +269,6 @@ export default function Toolbar() {
               isNaN(currentAnimation.duration) ? 0 : currentAnimation.duration
             }
             onChange={handleDurationChange}
-            disabled={!hasSelection}
             className="p-1 border rounded text-sm w-16"
           />
         </div>
