@@ -2,33 +2,35 @@ import { useMediaContext } from "@/providers/MediaProvider";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { useEffect } from "react";
 
-// CSS for all animations - now with iteration-count: 1 for all animations
+// CSS for all animations - now with zero opacity during delay for entrance animations
 const ANIMATION_STYLES = `
-/* Entrance animations */
+/* Entrance animations - all start with opacity 0 */
 @keyframes fadeIn-animation {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 @keyframes slideIn-animation {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
+  0% { opacity: 0; transform: translateX(-100%); }
+  100% { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes zoomIn-animation {
-  from { transform: scale(0); }
-  to { transform: scale(1); }
+  0% { opacity: 0; transform: scale(0); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 @keyframes bounceIn-animation {
-  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-30px); }
-  60% { transform: translateY(-15px); }
+  0% { opacity: 0; transform: translateY(0); }
+  20% { opacity: 0; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-30px); }
+  60% { opacity: 1; transform: translateY(-15px); }
+  80%, 100% { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes flipIn-animation {
-  from { transform: perspective(400px) rotateY(90deg); opacity: 0; }
-  to { transform: perspective(400px) rotateY(0deg); opacity: 1; }
+  0% { opacity: 0; transform: perspective(400px) rotateY(90deg); }
+  100% { opacity: 1; transform: perspective(400px) rotateY(0deg); }
 }
 
 /* Emphasis animations */
@@ -94,6 +96,7 @@ const ANIMATION_STYLES = `
   display: inline-block;
   transform-origin: center;
   backface-visibility: visible;
+  opacity: 0; /* Start all entrance animations with opacity 0 */
 }
 
 /* Entrance animations - all limited to 1 iteration */
@@ -104,18 +107,48 @@ const ANIMATION_STYLES = `
 .animated-text-flipIn { animation: flipIn-animation var(--duration) ease-in-out var(--delay) 1 forwards; }
 
 /* Emphasis animations - changed from infinite to 1 */
-.animated-text-pulse { animation: pulse-animation var(--duration) ease-in-out var(--delay) 1; }
-.animated-text-shake { animation: shake-animation var(--duration) ease-in-out var(--delay) 1; }
-.animated-text-wiggle { animation: wiggle-animation var(--duration) ease-in-out var(--delay) 1; }
-.animated-text-flash { animation: flash-animation var(--duration) ease-in-out var(--delay) 1; }
-.animated-text-bounce { animation: bounce-animation var(--duration) ease-in-out var(--delay) 1; }
+.animated-text-pulse { 
+  opacity: 1; /* Reset opacity for emphasis animations */
+  animation: pulse-animation var(--duration) ease-in-out var(--delay) 1; 
+}
+.animated-text-shake { 
+  opacity: 1; /* Reset opacity for emphasis animations */
+  animation: shake-animation var(--duration) ease-in-out var(--delay) 1; 
+}
+.animated-text-wiggle { 
+  opacity: 1; /* Reset opacity for emphasis animations */
+  animation: wiggle-animation var(--duration) ease-in-out var(--delay) 1; 
+}
+.animated-text-flash { 
+  opacity: 1; /* Reset opacity for emphasis animations */
+  animation: flash-animation var(--duration) ease-in-out var(--delay) 1; 
+}
+.animated-text-bounce { 
+  opacity: 1; /* Reset opacity for emphasis animations */
+  animation: bounce-animation var(--duration) ease-in-out var(--delay) 1; 
+}
 
 /* Exit animations - all limited to 1 iteration */
-.animated-text-fadeOut { animation: fadeOut-animation var(--duration) ease-in-out var(--delay) 1 forwards; }
-.animated-text-slideOut { animation: slideOut-animation var(--duration) ease-in-out var(--delay) 1 forwards; }
-.animated-text-zoomOut { animation: zoomOut-animation var(--duration) ease-in-out var(--delay) 1 forwards; }
-.animated-text-bounceOut { animation: bounceOut-animation var(--duration) ease-in-out var(--delay) 1 forwards; }
-.animated-text-flipOut { animation: flipOut-animation var(--duration) ease-in-out var(--delay) 1 forwards; }
+.animated-text-fadeOut { 
+  opacity: 1; /* Start exit animations fully visible */
+  animation: fadeOut-animation var(--duration) ease-in-out var(--delay) 1 forwards; 
+}
+.animated-text-slideOut { 
+  opacity: 1; /* Start exit animations fully visible */
+  animation: slideOut-animation var(--duration) ease-in-out var(--delay) 1 forwards; 
+}
+.animated-text-zoomOut { 
+  opacity: 1; /* Start exit animations fully visible */
+  animation: zoomOut-animation var(--duration) ease-in-out var(--delay) 1 forwards; 
+}
+.animated-text-bounceOut { 
+  opacity: 1; /* Start exit animations fully visible */
+  animation: bounceOut-animation var(--duration) ease-in-out var(--delay) 1 forwards; 
+}
+.animated-text-flipOut { 
+  opacity: 1; /* Start exit animations fully visible */
+  animation: flipOut-animation var(--duration) ease-in-out var(--delay) 1 forwards; 
+}
 `;
 
 // Create a style element to inject our animation CSS
