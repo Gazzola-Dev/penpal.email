@@ -2,11 +2,7 @@ import {
   CHANGE_FONT_FAMILY_COMMAND,
   CHANGE_FONT_SIZE_COMMAND,
 } from "@/lib/editorCommands";
-import {
-  animationOptions,
-  animationTypes,
-  useAnimation,
-} from "@/providers/AnimationProvider";
+import { useAnimation } from "@/providers/AnimationProvider";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $getSelectionStyleValueForProperty } from "@lexical/selection";
 import { mergeRegister } from "@lexical/utils";
@@ -40,16 +36,7 @@ function Divider() {
 
 const Toolbar: React.FC = () => {
   const [editor] = useLexicalComposerContext();
-  const {
-    hasSelection,
-    selectedText,
-    animationSettings,
-    applyAnimationToSelection,
-    handleTypeChange,
-    handleAnimationChange,
-    handleDelayChange,
-    handleDurationChange,
-  } = useAnimation();
+  const { hasSelection, selectedText } = useAnimation();
 
   // Text formatting states
   const [isBold, setIsBold] = useState(false);
@@ -251,7 +238,7 @@ const Toolbar: React.FC = () => {
 
       <Divider />
 
-      {/* Font options - Added from the pasted file */}
+      {/* Font options */}
       <select
         className="p-1 border rounded text-sm mr-2"
         value={fontFamily}
@@ -280,86 +267,7 @@ const Toolbar: React.FC = () => {
         <option value="36">36</option>
       </select>
 
-      <Divider />
-
-      {/* Animation controls */}
-      <div className="flex flex-wrap gap-2 items-center">
-        <span className="font-medium">Animation:</span>
-        {/* Animation type select */}
-        <select
-          className="px-2 py-1 border rounded"
-          value={animationSettings.type}
-          onChange={handleTypeChange}
-          disabled={!hasSelection}
-        >
-          {animationTypes.map((type) => (
-            <option
-              key={type}
-              value={type}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </option>
-          ))}
-        </select>
-        {/* Animation name select */}
-        <select
-          className="px-2 py-1 border rounded"
-          value={animationSettings.animation}
-          onChange={handleAnimationChange}
-          disabled={!hasSelection}
-        >
-          {animationOptions[
-            animationSettings.type as keyof typeof animationOptions
-          ].map((animation) => (
-            <option
-              key={animation}
-              value={animation}
-            >
-              {animation}
-            </option>
-          ))}
-        </select>
-        {/* Animation delay input */}
-        <div className="flex items-center gap-1">
-          <label htmlFor="delay">Delay:</label>
-          <input
-            id="delay"
-            type="number"
-            className="w-16 px-2 py-1 border rounded"
-            min="0"
-            step="0.1"
-            value={animationSettings.delay}
-            onChange={handleDelayChange}
-            disabled={!hasSelection}
-          />
-          <span>s</span>
-        </div>
-        {/* Animation duration input */}
-        <div className="flex items-center gap-1">
-          <label htmlFor="duration">Duration:</label>
-          <input
-            id="duration"
-            type="number"
-            className="w-16 px-2 py-1 border rounded"
-            min="0.1"
-            step="0.1"
-            value={animationSettings.duration}
-            onChange={handleDurationChange}
-            disabled={!hasSelection}
-          />
-          <span>s</span>
-        </div>
-        {/* Apply button */}
-        <button
-          className="px-3 py-1 bg-blue-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={applyAnimationToSelection}
-          disabled={!hasSelection}
-        >
-          Apply Animation
-        </button>
-      </div>
-
-      {/* Selection info */}
+      {/* Selection info - only kept this from the animation section */}
       {hasSelection && (
         <div className="ml-auto text-sm text-gray-600">
           Selected:{" "}

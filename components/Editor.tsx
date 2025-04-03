@@ -1,5 +1,8 @@
 "use client";
-
+import { AnimatedTextNode } from "@/components/AnimatedTextNode";
+import ToolbarPlugin from "@/components/ToolbarPlugin";
+import FontFormattingPlugin from "@/lib/editorCommands";
+import AnimationProvider from "@/providers/AnimationProvider";
 import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -8,13 +11,7 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ParagraphNode, TextNode } from "lexical";
 import React from "react";
-
 import AnimationPlugin from "./AnimationPlugin";
-
-import { AnimatedTextNode } from "@/components/AnimatedTextNode";
-import ToolbarPlugin from "@/components/ToolbarPlugin";
-import FontFormattingPlugin from "@/lib/editorCommands";
-import AnimationProvider from "@/providers/AnimationProvider";
 import ExampleTheme from "./ui/ExampleTheme";
 
 const placeholder = "Enter some rich text...";
@@ -34,7 +31,7 @@ const Editor: React.FC = () => {
   return (
     <LexicalComposer initialConfig={editorConfig}>
       <AnimationProvider>
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full border rounded-md overflow-hidden">
           <ToolbarPlugin />
           <div className="flex-1 overflow-auto relative">
             <RichTextPlugin

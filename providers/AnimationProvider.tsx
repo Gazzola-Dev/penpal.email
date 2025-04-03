@@ -8,6 +8,7 @@ import {
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
+  RangeSelection,
   SELECTION_CHANGE_COMMAND,
 } from "lexical";
 import React, {
@@ -15,6 +16,8 @@ import React, {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -34,10 +37,17 @@ export const animationOptions = {
   exit: ["fadeOut", "slideOut", "zoomOut", "bounceOut", "flipOut"],
 };
 
+// Interface for storing selection data
+interface SelectionData {
+  key: string;
+  animationSettings: AnimationSettings;
+}
+
 // Context interface
 interface AnimationContextType {
   hasSelection: boolean;
   selectedText: string;
+  selectionRect: DOMRect | null;
   animationSettings: AnimationSettings;
   setAnimationSettings: (settings: AnimationSettings) => void;
   applyAnimationToSelection: () => void;
@@ -45,12 +55,14 @@ interface AnimationContextType {
   handleAnimationChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   handleDelayChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleDurationChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  selectionMap: Map<string, SelectionData>;
 }
 
 // Create context with default values
 const AnimationContext = createContext<AnimationContextType>({
   hasSelection: false,
   selectedText: "",
+  selectionRect: null,
   animationSettings: defaultAnimationSettings,
   setAnimationSettings: () => {},
   applyAnimationToSelection: () => {},
@@ -58,16 +70,32 @@ const AnimationContext = createContext<AnimationContextType>({
   handleAnimationChange: () => {},
   handleDelayChange: () => {},
   handleDurationChange: () => {},
+  selectionMap: new Map(),
 });
+
+// Create a unique key for a selection
+function createSelectionKey(selection: RangeSelection): string {
+  const anchorKey = selection.anchor.key;
+  const focusKey = selection.focus.key;
+  const anchorOffset = selection.anchor.offset;
+  const focusOffset = selection.focus.offset;
+
+  return `${anchorKey}:${anchorOffset}-${focusKey}:${focusOffset}`;
+}
 
 // Provider component
 export const AnimationProvider = ({ children }: { children: ReactNode }) => {
   const [editor] = useLexicalComposerContext();
   const [hasSelection, setHasSelection] = useState(false);
   const [selectedText, setSelectedText] = useState("");
+  const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
   const [animationSettings, setAnimationSettings] = useState<AnimationSettings>(
     defaultAnimationSettings
   );
+  const [selectionMap, setSelectionMap] = useState<Map<string, SelectionData>>(
+    new Map()
+  );
+  const selectionKeyRef = useRef<string | null>(null);
 
   // Function to get animation settings from the current selection
   const getSelectionAnimationSettings =
@@ -103,6 +131,15 @@ export const AnimationProvider = ({ children }: { children: ReactNode }) => {
       return settings;
     }, [editor]);
 
+  // Get DOMRect for the current selection
+  const getSelectionRect = useCallback((): DOMRect | null => {
+    const domSelection = window.getSelection();
+    if (!domSelection || domSelection.rangeCount === 0) return null;
+
+    const range = domSelection.getRangeAt(0);
+    return range.getBoundingClientRect();
+  }, []);
+
   // Update selection state when the selection changes
   const updateSelectionState = useCallback(() => {
     editor.getEditorState().read(() => {
@@ -114,23 +151,56 @@ export const AnimationProvider = ({ children }: { children: ReactNode }) => {
         setHasSelection(newHasSelection);
         setSelectedText(text);
 
-        // Get animation settings from the current selection
         if (newHasSelection) {
-          const selectionSettings = getSelectionAnimationSettings();
+          // Get bounding rectangle of the selection
+          const rect = getSelectionRect();
+          setSelectionRect(rect);
 
-          if (selectionSettings) {
-            setAnimationSettings(selectionSettings);
+          // Create a unique key for this selection
+          const selectionKey = createSelectionKey(selection);
+          selectionKeyRef.current = selectionKey;
+
+          // Get animation settings from the selectionMap or from the current selection
+          if (selectionMap.has(selectionKey)) {
+            // If we have previously stored settings for this selection, use them
+            setAnimationSettings(
+              selectionMap.get(selectionKey)!.animationSettings
+            );
+          } else {
+            // Otherwise, check if the selection contains animated nodes
+            const selectionSettings = getSelectionAnimationSettings();
+
+            if (selectionSettings) {
+              setAnimationSettings(selectionSettings);
+              // Store these settings in the map
+              setSelectionMap((prevMap) => {
+                const newMap = new Map(prevMap);
+                newMap.set(selectionKey, {
+                  key: selectionKey,
+                  animationSettings: selectionSettings,
+                });
+                return newMap;
+              });
+            } else {
+              // If no existing animation, use default
+              setAnimationSettings(defaultAnimationSettings);
+            }
           }
+        } else {
+          setSelectionRect(null);
+          selectionKeyRef.current = null;
         }
       } else {
         setHasSelection(false);
         setSelectedText("");
+        setSelectionRect(null);
+        selectionKeyRef.current = null;
       }
     });
-  }, [editor, getSelectionAnimationSettings]);
+  }, [editor, getSelectionAnimationSettings, getSelectionRect, selectionMap]);
 
   // Register selection change listener
-  React.useEffect(() => {
+  useEffect(() => {
     return mergeRegister(
       editor.registerUpdateListener(({ editorState }) => {
         editorState.read(() => {
@@ -152,84 +222,112 @@ export const AnimationProvider = ({ children }: { children: ReactNode }) => {
   const applyAnimationToSelection = useCallback(() => {
     if (hasSelection) {
       editor.dispatchCommand(APPLY_ANIMATION_COMMAND, animationSettings);
+
+      // After applying animation, update our selectionMap
+      if (selectionKeyRef.current) {
+        setSelectionMap((prevMap) => {
+          const newMap = new Map(prevMap);
+          newMap.set(selectionKeyRef.current!, {
+            key: selectionKeyRef.current!,
+            animationSettings: { ...animationSettings },
+          });
+          return newMap;
+        });
+      }
     }
   }, [editor, hasSelection, animationSettings]);
+
+  // Update animation settings and store in selectionMap
+  const updateAnimationSettings = useCallback(
+    (newSettings: AnimationSettings) => {
+      setAnimationSettings(newSettings);
+
+      // Update selectionMap if we have an active selection
+      if (selectionKeyRef.current) {
+        setSelectionMap((prevMap) => {
+          const newMap = new Map(prevMap);
+          newMap.set(selectionKeyRef.current!, {
+            key: selectionKeyRef.current!,
+            animationSettings: newSettings,
+          });
+          return newMap;
+        });
+      }
+    },
+    []
+  );
 
   // Handle animation type change
   const handleTypeChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const newType = e.target.value;
-      setAnimationSettings((prev) => ({
-        ...prev,
+      const newSettings = {
+        ...animationSettings,
         type: newType,
         animation:
           animationOptions[newType as keyof typeof animationOptions][0],
-      }));
+      };
+
+      updateAnimationSettings(newSettings);
     },
-    []
+    [animationSettings, updateAnimationSettings]
   );
 
   // Handle animation name change
   const handleAnimationChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const newAnimation = e.target.value;
-      setAnimationSettings((prev) => ({
-        ...prev,
+      const newSettings = {
+        ...animationSettings,
         animation: newAnimation,
-      }));
+      };
+
+      updateAnimationSettings(newSettings);
     },
-    []
+    [animationSettings, updateAnimationSettings]
   );
 
   // Handle animation delay change
   const handleDelayChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newDelay = parseFloat(e.target.value);
-      const updatedSettings = {
+      const newSettings = {
         ...animationSettings,
         delay: isNaN(newDelay) ? 0 : newDelay,
       };
 
-      setAnimationSettings(updatedSettings);
-
-      // Auto-apply animation if there's a selection
-      if (hasSelection && e.target.value !== "") {
-        editor.dispatchCommand(APPLY_ANIMATION_COMMAND, updatedSettings);
-      }
+      updateAnimationSettings(newSettings);
     },
-    [editor, animationSettings, hasSelection]
+    [animationSettings, updateAnimationSettings]
   );
 
   // Handle animation duration change
   const handleDurationChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newDuration = parseFloat(e.target.value);
-      const updatedSettings = {
+      const newSettings = {
         ...animationSettings,
         duration: isNaN(newDuration) ? 1 : newDuration,
       };
 
-      setAnimationSettings(updatedSettings);
-
-      // Auto-apply animation if there's a selection
-      if (hasSelection && e.target.value !== "") {
-        editor.dispatchCommand(APPLY_ANIMATION_COMMAND, updatedSettings);
-      }
+      updateAnimationSettings(newSettings);
     },
-    [editor, animationSettings, hasSelection]
+    [animationSettings, updateAnimationSettings]
   );
 
   // Context value
   const contextValue: AnimationContextType = {
     hasSelection,
     selectedText,
+    selectionRect,
     animationSettings,
-    setAnimationSettings,
+    setAnimationSettings: updateAnimationSettings,
     applyAnimationToSelection,
     handleTypeChange,
     handleAnimationChange,
     handleDelayChange,
     handleDurationChange,
+    selectionMap,
   };
 
   return (

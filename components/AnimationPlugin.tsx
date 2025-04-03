@@ -10,6 +10,7 @@ import {
 import React, { useEffect } from "react";
 
 import { AnimatedTextNode } from "@/components/AnimatedTextNode";
+import AnimationPopover from "@/components/AnimationPopover";
 import {
   APPLY_ANIMATION_COMMAND,
   copyFormatsToNode,
@@ -228,7 +229,7 @@ const AnimationPlugin: React.FC = () => {
     );
   }, [editor]);
 
-  return null;
+  return <AnimationPopover />;
 };
 
 export default AnimationPlugin;
