@@ -19,8 +19,10 @@ import {
   TextNode,
 } from "lexical";
 
+import AnimationPlugin from "@/components/Animation";
 import Toolbar from "@/components/Toolbar";
 import ExampleTheme from "@/components/ui/ExampleTheme";
+import { AnimatedTextNode } from "@/hooks/editor.hooks";
 import FontFormattingPlugin from "@/lib/editorCommands";
 import { parseAllowedColor, parseAllowedFontSize } from "@/lib/styleConfig";
 
@@ -55,6 +57,7 @@ const exportMap: DOMExportOutputMap = new Map<
 >([
   [ParagraphNode, removeStylesExportDOM],
   [TextNode, removeStylesExportDOM],
+  [AnimatedTextNode, removeStylesExportDOM],
 ]);
 
 const getExtraStyles = (element: HTMLElement): string => {
@@ -127,13 +130,15 @@ const constructImportMap = (): DOMConversionMap => {
   return importMap;
 };
 
+// Define the editorConfig with explicit node registration
 const editorConfig = {
   html: {
     export: exportMap,
     import: constructImportMap(),
   },
   namespace: "Rich Text Editor",
-  nodes: [ParagraphNode, TextNode],
+  // Register our custom AnimatedTextNode here explicitly along with standard nodes
+  nodes: [ParagraphNode, TextNode, AnimatedTextNode],
   onError(error: Error) {
     throw error;
   },
@@ -149,7 +154,7 @@ export default function Editor() {
           <RichTextPlugin
             contentEditable={
               <ContentEditable
-                className="px-2 h-[calc(100%-0.2rem)] overflow-auto"
+                className="px-2 h-[calc(100%-0.2rem)] overflow-auto focus:outline-none"
                 aria-placeholder={placeholder}
                 placeholder={
                   <div className="absolute top-2 left-2 -z-10">
@@ -163,6 +168,7 @@ export default function Editor() {
           <HistoryPlugin />
           <AutoFocusPlugin />
           <FontFormattingPlugin />
+          <AnimationPlugin />
         </div>
       </div>
     </LexicalComposer>

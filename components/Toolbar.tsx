@@ -23,46 +23,44 @@ import {
   Bold,
   Clock,
   Italic,
+  Play,
   Redo,
   Underline,
   Undo,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-// Import the custom commands
+
+import { Tooltip } from "@/components/Tooltip";
+import {
+  animationOptions,
+  animationTypes,
+  useEditorWithAnimations,
+} from "@/hooks/editor.hooks";
 import {
   CHANGE_FONT_FAMILY_COMMAND,
   CHANGE_FONT_SIZE_COMMAND,
 } from "@/lib/editorCommands";
 import { $getSelectionStyleValueForProperty } from "@lexical/selection";
 
-// Animation options
-export const animationTypes = ["entrance", "emphasis", "exit"];
-export const animationOptions = {
-  entrance: ["fadeIn", "slideIn", "zoomIn", "bounceIn", "flipIn"],
-  emphasis: ["pulse", "shake", "wiggle", "flash", "bounce"],
-  exit: ["fadeOut", "slideOut", "zoomOut", "bounceOut", "flipOut"],
-};
-
 function Divider() {
   return <div className="h-6 w-px bg-gray-300 mx-2" />;
-}
-
-interface AnimationSettings {
-  type: string;
-  animation: string;
-  delay: number;
-  duration: number;
 }
 
 export default function Toolbar() {
   const [editor] = useLexicalComposerContext();
   const toolbarRef = useRef<HTMLDivElement>(null);
-  const [currentAnimation, setCurrentAnimation] = useState<AnimationSettings>({
-    type: "entrance",
-    animation: "fadeIn",
-    delay: 0,
-    duration: 1,
-  });
+
+  // Use our custom hook for animation functionality
+  const {
+    hasSelection,
+    animationSettings,
+
+    applyAnimationToSelection,
+    handleTypeChange,
+    handleAnimationChange,
+    handleDelayChange,
+    handleDurationChange,
+  } = useEditorWithAnimations();
 
   // Text formatting states
   const [isBold, setIsBold] = useState(false);
@@ -152,37 +150,6 @@ export default function Toolbar() {
     );
   }, [editor, updateToolbar]);
 
-  // Handlers for animation settings
-  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCurrentAnimation({
-      ...currentAnimation,
-      type: e.target.value,
-      animation:
-        animationOptions[e.target.value as keyof typeof animationOptions][0],
-    });
-  };
-
-  const handleAnimationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCurrentAnimation({
-      ...currentAnimation,
-      animation: e.target.value,
-    });
-  };
-
-  const handleDelayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrentAnimation({
-      ...currentAnimation,
-      delay: parseFloat(e.target.value),
-    });
-  };
-
-  const handleDurationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrentAnimation({
-      ...currentAnimation,
-      duration: parseFloat(e.target.value),
-    });
-  };
-
   // New handlers for font family and size
   const handleFontFamilyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFontFamily = e.target.value;
@@ -196,9 +163,14 @@ export default function Toolbar() {
     editor.dispatchCommand(CHANGE_FONT_SIZE_COMMAND, parseInt(newFontSize, 10));
   };
 
+  // Apply animation button handler
+  const handleApplyAnimation = () => {
+    applyAnimationToSelection();
+  };
+
   return (
     <div
-      className={`p-2 border-b flex items-center transition-colors duration-300`}
+      className="p-2 border-b flex items-center transition-colors duration-300"
       ref={toolbarRef}
     >
       {/* Undo/Redo buttons */}
@@ -312,8 +284,6 @@ export default function Toolbar() {
 
       <Divider />
 
-      <Divider />
-
       {/* Font options */}
       <select
         className="p-1 border rounded text-sm mr-2"
@@ -346,9 +316,7 @@ export default function Toolbar() {
       <Divider />
 
       {/* Animation section */}
-      <div
-        className={`flex items-center space-x-2 transition-transform duration-300 w-full`}
-      >
+      <div className="flex items-center space-x-2 transition-transform duration-300 flex-1">
         <div className="flex items-center">
           <label
             htmlFor="animation-type"
@@ -358,9 +326,10 @@ export default function Toolbar() {
           </label>
           <select
             id="animation-type"
-            value={currentAnimation.type}
+            value={animationSettings.type}
             onChange={handleTypeChange}
             className="p-1 border rounded text-sm"
+            disabled={!hasSelection}
           >
             {animationTypes.map((type) => (
               <option
@@ -382,12 +351,13 @@ export default function Toolbar() {
           </label>
           <select
             id="animation-name"
-            value={currentAnimation.animation}
+            value={animationSettings.animation}
             onChange={handleAnimationChange}
             className="p-1 border rounded text-sm"
+            disabled={!hasSelection}
           >
             {animationOptions[
-              currentAnimation.type as keyof typeof animationOptions
+              animationSettings.type as keyof typeof animationOptions
             ].map((animation) => (
               <option
                 key={animation}
@@ -400,60 +370,80 @@ export default function Toolbar() {
         </div>
 
         <div className="flex items-center">
-          <label
-            htmlFor="animation-delay"
-            className="text-sm mr-1"
-          >
-            Delay:
-          </label>
+          <Tooltip content="Animation delay in seconds">
+            <label
+              htmlFor="animation-delay"
+              className="text-sm mr-1"
+            >
+              Delay:
+            </label>
+          </Tooltip>
           <input
             id="animation-delay"
             type="number"
             min={0}
             step={0.1}
-            value={isNaN(currentAnimation.delay) ? 0 : currentAnimation.delay}
+            value={isNaN(animationSettings.delay) ? 0 : animationSettings.delay}
             onChange={handleDelayChange}
             className="p-1 border rounded text-sm w-16"
+            disabled={!hasSelection}
           />
         </div>
 
         <div className="flex items-center">
-          <label
-            htmlFor="animation-duration"
-            className="text-sm mr-1"
-          >
-            Duration:
-          </label>
+          <Tooltip content="Animation duration in seconds">
+            <label
+              htmlFor="animation-duration"
+              className="text-sm mr-1"
+            >
+              Duration:
+            </label>
+          </Tooltip>
           <input
             id="animation-duration"
             type="number"
             min={0.1}
             step={0.1}
             value={
-              isNaN(currentAnimation.duration) ? 0 : currentAnimation.duration
+              isNaN(animationSettings.duration) ? 1 : animationSettings.duration
             }
             onChange={handleDurationChange}
             className="p-1 border rounded text-sm w-16"
+            disabled={!hasSelection}
           />
         </div>
-        <>
-          <Divider />
 
-          <div className="flex items-center mr-4 text-sm w-full justify-end">
-            <Clock
-              size={16}
-              className={cn("mr-1", isPlaying && "text-blue-500")}
-            />
-            <span className={cn("text-gray-700", isPlaying && "")}>
-              <span
-                className={cn("text-gray-700", isPlaying && "text-blue-500")}
-              >
-                {formatTime(currentTime)}{" "}
-              </span>{" "}
-              / {formatTime(duration)}
-            </span>
-          </div>
-        </>
+        <button
+          className={`p-1 rounded-sm bg-blue-500 text-white flex items-center ${
+            !hasSelection
+              ? "opacity-50 cursor-not-allowed"
+              : "hover:bg-blue-600"
+          }`}
+          onClick={handleApplyAnimation}
+          disabled={!hasSelection}
+          aria-label="Apply Animation"
+        >
+          <Play
+            size={16}
+            className="mr-1"
+          />{" "}
+          Apply
+        </button>
+
+        <Divider />
+
+        <div className="flex items-center ml-auto text-sm">
+          <Clock
+            size={16}
+            className={cn("mr-1", isPlaying && "text-blue-500")}
+          />
+          <span className={cn("text-gray-700", isPlaying && "")}>
+            <span className={cn("text-gray-700", isPlaying && "text-blue-500")}>
+              {formatTime(currentTime)}{" "}
+            </span>{" "}
+            / {formatTime(duration)}
+          </span>
+        </div>
       </div>
     </div>
   );

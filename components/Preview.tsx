@@ -1,6 +1,6 @@
 "use client";
 
-import usePreview from "@/hooks/usePreview";
+import usePreview from "@/hooks/preview.hooks";
 import { ContentNode } from "@/types";
 import { useEffect } from "react";
 
