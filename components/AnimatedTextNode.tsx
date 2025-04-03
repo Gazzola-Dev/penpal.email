@@ -45,7 +45,6 @@ export class AnimatedTextNode extends TextNode {
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
     if (this.__animation) {
-      dom.style.backgroundColor = "rgba(0, 120, 255, 0.1)";
       dom.setAttribute("data-animation-type", this.__animation.type);
       dom.setAttribute("data-animation-name", this.__animation.animation);
       dom.setAttribute("data-animation-delay", String(this.__animation.delay));
@@ -77,7 +76,6 @@ export class AnimatedTextNode extends TextNode {
 
     if (hasAnimationChanged) {
       if (this.__animation) {
-        dom.style.backgroundColor = "rgba(0, 120, 255, 0.1)";
         dom.setAttribute("data-animation-type", this.__animation.type);
         dom.setAttribute("data-animation-name", this.__animation.animation);
         dom.setAttribute(
@@ -93,7 +91,6 @@ export class AnimatedTextNode extends TextNode {
           `${this.__animation.type}: ${this.__animation.animation} (delay: ${this.__animation.delay}s, duration: ${this.__animation.duration}s)`
         );
       } else {
-        dom.style.backgroundColor = "";
         dom.removeAttribute("data-animation-type");
         dom.removeAttribute("data-animation-name");
         dom.removeAttribute("data-animation-delay");

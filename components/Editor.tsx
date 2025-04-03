@@ -1,5 +1,6 @@
 "use client";
 import { AnimatedTextNode } from "@/components/AnimatedTextNode";
+import PlaybackAnimationPlugin from "@/components/PlaybackAnimationPlugin";
 import ToolbarPlugin from "@/components/ToolbarPlugin";
 import FontFormattingPlugin from "@/lib/editorCommands";
 import AnimationProvider from "@/providers/AnimationProvider";
@@ -52,6 +53,7 @@ const Editor: React.FC = () => {
             <HistoryPlugin />
             <AutoFocusPlugin />
             <AnimationPlugin />
+            <PlaybackAnimationPlugin />
           </div>
         </div>
       </AnimationProvider>
