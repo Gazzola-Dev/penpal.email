@@ -1,6 +1,17 @@
-import { EditorState } from "lexical";
+import { EditorState, SerializedTextNode, createCommand } from "lexical";
 
-// Animation related types
+// Animation types and options
+export type AnimationType = "entrance" | "emphasis" | "exit";
+export const animationTypes = ["entrance", "emphasis", "exit"];
+export const animationOptions = {
+  entrance: ["fadeIn", "slideIn", "zoomIn", "bounceIn", "flipIn"],
+  emphasis: ["pulse", "shake", "wiggle", "flash", "bounce"],
+  exit: ["fadeOut", "slideOut", "zoomOut", "bounceOut", "flipOut"],
+};
+
+export type AnimationOption = string;
+
+// Animation settings interface
 export interface AnimationSettings {
   type: string;
   animation: string;
@@ -8,26 +19,36 @@ export interface AnimationSettings {
   duration: number;
 }
 
-// Editor hook state returned from useEditor
-export interface EditorHookState {
-  hasSelection: boolean;
-  selectedText: string;
-  currentAnimation: AnimationSettings;
-  handleTypeChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  handleAnimationChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  handleDelayChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleDurationChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+// Animation type options mapping
+export interface AnimationTypeOption {
+  value: AnimationType;
+  label: string;
 }
 
-// Editor state and management
+export interface AnimationSelectOption {
+  value: AnimationOption;
+  label: string;
+}
+
+export type AnimationOptionsMap = {
+  [key in AnimationType]: AnimationSelectOption[];
+};
+
+// Editor hook state returned from useEditor
 export interface EditorHookState {
   editorState: EditorState | null;
   setEditorState: (state: EditorState) => void;
   hasSelection: boolean;
   setHasSelection: (hasSelection: boolean) => void;
+  selectedText: string;
+  currentAnimation: AnimationSettings;
   animationSettings: AnimationSettings;
   setAnimationSettings: (settings: AnimationSettings) => void;
   applyAnimationToSelection: () => void;
+  handleTypeChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  handleAnimationChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  handleDelayChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleDurationChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 // Toolbar props
@@ -51,17 +72,13 @@ export interface PreviewHookState {
   parseEditorState: () => void;
 }
 
-// Animation type options mapping
-export interface AnimationTypeOption {
-  value: AnimationType;
-  label: string;
-}
+// Define a custom command to apply animation
+export const APPLY_ANIMATION_COMMAND = createCommand<AnimationSettings>(
+  "APPLY_ANIMATION_COMMAND"
+);
 
-export interface AnimationSelectOption {
-  value: AnimationOption;
-  label: string;
+// Define the serialized version of animated text node
+export interface SerializedAnimatedTextNode extends SerializedTextNode {
+  type: "animated-text";
+  animation: AnimationSettings | null;
 }
-
-export type AnimationOptionsMap = {
-  [key in AnimationType]: AnimationSelectOption[];
-};

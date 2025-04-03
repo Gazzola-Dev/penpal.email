@@ -1,8 +1,14 @@
-"use client";
-
-import { cn } from "@/lib/utils";
-import { useMediaContext } from "@/providers/MediaProvider";
+import {
+  CHANGE_FONT_FAMILY_COMMAND,
+  CHANGE_FONT_SIZE_COMMAND,
+} from "@/lib/editorCommands";
+import {
+  animationOptions,
+  animationTypes,
+  useAnimation,
+} from "@/providers/AnimationProvider";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { $getSelectionStyleValueForProperty } from "@lexical/selection";
 import { mergeRegister } from "@lexical/utils";
 import {
   $getSelection,
@@ -21,46 +27,29 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
-  Clock,
   Italic,
-  Play,
   Redo,
   Underline,
   Undo,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-
-import { Tooltip } from "@/components/Tooltip";
-import {
-  animationOptions,
-  animationTypes,
-  useEditorWithAnimations,
-} from "@/hooks/editor.hooks";
-import {
-  CHANGE_FONT_FAMILY_COMMAND,
-  CHANGE_FONT_SIZE_COMMAND,
-} from "@/lib/editorCommands";
-import { $getSelectionStyleValueForProperty } from "@lexical/selection";
+import React, { useCallback, useEffect, useState } from "react";
 
 function Divider() {
   return <div className="h-6 w-px bg-gray-300 mx-2" />;
 }
 
-export default function Toolbar() {
+const Toolbar: React.FC = () => {
   const [editor] = useLexicalComposerContext();
-  const toolbarRef = useRef<HTMLDivElement>(null);
-
-  // Use our custom hook for animation functionality
   const {
     hasSelection,
+    selectedText,
     animationSettings,
-
     applyAnimationToSelection,
     handleTypeChange,
     handleAnimationChange,
     handleDelayChange,
     handleDurationChange,
-  } = useEditorWithAnimations();
+  } = useAnimation();
 
   // Text formatting states
   const [isBold, setIsBold] = useState(false);
@@ -70,20 +59,6 @@ export default function Toolbar() {
   const [canRedo, setCanRedo] = useState(false);
   const [fontFamily, setFontFamily] = useState("Arial");
   const [fontSize, setFontSize] = useState("16");
-
-  // Get media playback time from context
-  const { currentTime, duration, isPlaying } = useMediaContext();
-
-  // Format time as MM:SS
-  const formatTime = (timeInSeconds: number): string => {
-    if (isNaN(timeInSeconds)) return "00:00";
-
-    const minutes = Math.floor(timeInSeconds / 60);
-    const seconds = Math.floor(timeInSeconds % 60);
-    return `${minutes.toString().padStart(2, "0")}:${seconds
-      .toString()
-      .padStart(2, "0")}`;
-  };
 
   // Update toolbar based on text selection format
   const updateToolbar = useCallback(() => {
@@ -150,7 +125,7 @@ export default function Toolbar() {
     );
   }, [editor, updateToolbar]);
 
-  // New handlers for font family and size
+  // Font handling
   const handleFontFamilyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFontFamily = e.target.value;
     setFontFamily(newFontFamily);
@@ -163,18 +138,10 @@ export default function Toolbar() {
     editor.dispatchCommand(CHANGE_FONT_SIZE_COMMAND, parseInt(newFontSize, 10));
   };
 
-  // Apply animation button handler
-  const handleApplyAnimation = () => {
-    applyAnimationToSelection();
-  };
-
   return (
-    <div
-      className="p-2 border-b flex items-center transition-colors duration-300"
-      ref={toolbarRef}
-    >
+    <div className="p-2 border-b flex flex-wrap gap-0 items-center bg-gray-50">
       {/* Undo/Redo buttons */}
-      <div className="flex items-center mr-4">
+      <div className="flex items-center mr-2">
         <button
           className={`p-1 hover:bg-gray-100 rounded-sm ${
             !canUndo ? "opacity-50" : ""
@@ -204,7 +171,7 @@ export default function Toolbar() {
       <Divider />
 
       {/* Text formatting options */}
-      <div className="flex items-center mr-4">
+      <div className="flex items-center mr-1">
         <button
           className={`p-1 hover:bg-gray-100 rounded-sm ${
             isBold ? "bg-gray-200" : ""
@@ -243,7 +210,7 @@ export default function Toolbar() {
       <Divider />
 
       {/* Alignment options */}
-      <div className="flex items-center mr-4">
+      <div className="flex items-center mr-2">
         <button
           className="p-1 hover:bg-gray-100 rounded-sm"
           onClick={() => {
@@ -284,7 +251,7 @@ export default function Toolbar() {
 
       <Divider />
 
-      {/* Font options */}
+      {/* Font options - Added from the pasted file */}
       <select
         className="p-1 border rounded text-sm mr-2"
         value={fontFamily}
@@ -315,136 +282,94 @@ export default function Toolbar() {
 
       <Divider />
 
-      {/* Animation section */}
-      <div className="flex items-center space-x-2 transition-transform duration-300 flex-1">
-        <div className="flex items-center">
-          <label
-            htmlFor="animation-type"
-            className="text-sm mr-1"
-          >
-            Type:
-          </label>
-          <select
-            id="animation-type"
-            value={animationSettings.type}
-            onChange={handleTypeChange}
-            className="p-1 border rounded text-sm"
-            disabled={!hasSelection}
-          >
-            {animationTypes.map((type) => (
-              <option
-                key={type}
-                value={type}
-              >
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex items-center">
-          <label
-            htmlFor="animation-name"
-            className="text-sm mr-1"
-          >
-            Animation:
-          </label>
-          <select
-            id="animation-name"
-            value={animationSettings.animation}
-            onChange={handleAnimationChange}
-            className="p-1 border rounded text-sm"
-            disabled={!hasSelection}
-          >
-            {animationOptions[
-              animationSettings.type as keyof typeof animationOptions
-            ].map((animation) => (
-              <option
-                key={animation}
-                value={animation}
-              >
-                {animation}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex items-center">
-          <Tooltip content="Animation delay in seconds">
-            <label
-              htmlFor="animation-delay"
-              className="text-sm mr-1"
-            >
-              Delay:
-            </label>
-          </Tooltip>
-          <input
-            id="animation-delay"
-            type="number"
-            min={0}
-            step={0.1}
-            value={isNaN(animationSettings.delay) ? 0 : animationSettings.delay}
-            onChange={handleDelayChange}
-            className="p-1 border rounded text-sm w-16"
-            disabled={!hasSelection}
-          />
-        </div>
-
-        <div className="flex items-center">
-          <Tooltip content="Animation duration in seconds">
-            <label
-              htmlFor="animation-duration"
-              className="text-sm mr-1"
-            >
-              Duration:
-            </label>
-          </Tooltip>
-          <input
-            id="animation-duration"
-            type="number"
-            min={0.1}
-            step={0.1}
-            value={
-              isNaN(animationSettings.duration) ? 1 : animationSettings.duration
-            }
-            onChange={handleDurationChange}
-            className="p-1 border rounded text-sm w-16"
-            disabled={!hasSelection}
-          />
-        </div>
-
-        <button
-          className={`p-1 rounded-sm bg-blue-500 text-white flex items-center ${
-            !hasSelection
-              ? "opacity-50 cursor-not-allowed"
-              : "hover:bg-blue-600"
-          }`}
-          onClick={handleApplyAnimation}
+      {/* Animation controls */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <span className="font-medium">Animation:</span>
+        {/* Animation type select */}
+        <select
+          className="px-2 py-1 border rounded"
+          value={animationSettings.type}
+          onChange={handleTypeChange}
           disabled={!hasSelection}
-          aria-label="Apply Animation"
         >
-          <Play
-            size={16}
-            className="mr-1"
-          />{" "}
-          Apply
-        </button>
-
-        <Divider />
-
-        <div className="flex items-center ml-auto text-sm">
-          <Clock
-            size={16}
-            className={cn("mr-1", isPlaying && "text-blue-500")}
+          {animationTypes.map((type) => (
+            <option
+              key={type}
+              value={type}
+            >
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+            </option>
+          ))}
+        </select>
+        {/* Animation name select */}
+        <select
+          className="px-2 py-1 border rounded"
+          value={animationSettings.animation}
+          onChange={handleAnimationChange}
+          disabled={!hasSelection}
+        >
+          {animationOptions[
+            animationSettings.type as keyof typeof animationOptions
+          ].map((animation) => (
+            <option
+              key={animation}
+              value={animation}
+            >
+              {animation}
+            </option>
+          ))}
+        </select>
+        {/* Animation delay input */}
+        <div className="flex items-center gap-1">
+          <label htmlFor="delay">Delay:</label>
+          <input
+            id="delay"
+            type="number"
+            className="w-16 px-2 py-1 border rounded"
+            min="0"
+            step="0.1"
+            value={animationSettings.delay}
+            onChange={handleDelayChange}
+            disabled={!hasSelection}
           />
-          <span className={cn("text-gray-700", isPlaying && "")}>
-            <span className={cn("text-gray-700", isPlaying && "text-blue-500")}>
-              {formatTime(currentTime)}{" "}
-            </span>{" "}
-            / {formatTime(duration)}
-          </span>
+          <span>s</span>
         </div>
+        {/* Animation duration input */}
+        <div className="flex items-center gap-1">
+          <label htmlFor="duration">Duration:</label>
+          <input
+            id="duration"
+            type="number"
+            className="w-16 px-2 py-1 border rounded"
+            min="0.1"
+            step="0.1"
+            value={animationSettings.duration}
+            onChange={handleDurationChange}
+            disabled={!hasSelection}
+          />
+          <span>s</span>
+        </div>
+        {/* Apply button */}
+        <button
+          className="px-3 py-1 bg-blue-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={applyAnimationToSelection}
+          disabled={!hasSelection}
+        >
+          Apply Animation
+        </button>
       </div>
+
+      {/* Selection info */}
+      {hasSelection && (
+        <div className="ml-auto text-sm text-gray-600">
+          Selected:{" "}
+          {selectedText.length > 20
+            ? `${selectedText.substring(0, 20)}...`
+            : selectedText}
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default Toolbar;
